@@ -23,7 +23,7 @@ pip install huggingface-hub
 Download a directory from a HuggingFace repository:
 
 ```bash
-python hf_download.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/vae
+python hf_dl.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/vae
 ```
 
 ### Command Line Arguments
@@ -38,27 +38,27 @@ python hf_download.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree
 
 #### Download with limited concurrent connections
 ```bash
-python hf_download.py https://huggingface.co/stabilityai/stable-diffusion-2-1/tree/main/vae --max-workers 1
+python hf_dl.py https://huggingface.co/stabilityai/stable-diffusion-2-1/tree/main/vae --max-workers 1
 ```
 
 #### Download to specific output directory
 ```bash
-python hf_download.py https://huggingface.co/CompVis/stable-diffusion-v1-4/tree/main/safety_checker --output-dir ~/models
+python hf_dl.py https://huggingface.co/CompVis/stable-diffusion-v1-4/tree/main/safety_checker --output-dir ~/models
 ```
 
 #### Download with custom folder name
 ```bash
-python hf_download.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/text_encoder --output-dir ~/models --local-dir sd15-text-encoder
+python hf_dl.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/text_encoder --output-dir ~/models --local-dir sd15-text-encoder
 ```
 
 #### Download from private repository
 ```bash
-python hf_download.py https://huggingface.co/private-repo/model/tree/main/weights --token YOUR_HF_TOKEN
+python hf_dl.py https://huggingface.co/private-repo/model/tree/main/weights --token YOUR_HF_TOKEN
 ```
 
 #### Full example with all options
 ```bash
-python hf_download.py https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/tree/main/unet \
+python hf_dl.py https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/tree/main/unet \
   --output-dir ~/sdxl-models \
   --local-dir sdxl-unet \
   --max-workers 3 \
