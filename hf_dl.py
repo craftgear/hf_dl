@@ -18,31 +18,31 @@ def download_hf_directory(
     max_workers: int = 2,
 ):
     """
-    指定されたHugging Faceリポジトリのディレクトリを再帰的にダウンロード
+    Recursively download a directory from the specified Hugging Face repository
     """
     try:
-        # ローカルディレクトリが指定されていない場合は、リポジトリ名とディレクトリ名を使用
+        # If local directory is not specified, use repository name and directory name
         if local_dir is None:
             repo_name = repo_id.replace("/", "_")
             dir_name = directory.replace("/", "_")
             local_dir = f"{repo_name}_{dir_name}"
 
-        # output_dirが指定されている場合、その中にlocal_dirを作成
+        # If output_dir is specified, create local_dir inside it
         if output_dir is not None:
-            # 相対パスを絶対パスに変換
+            # Convert relative path to absolute path
             output_dir = os.path.abspath(os.path.expanduser(output_dir))
             local_dir = os.path.join(output_dir, local_dir)
 
-        # ディレクトリパスの正規化（先頭・末尾のスラッシュを削除）
+        # Normalize directory path (remove leading/trailing slashes)
         directory = directory.strip("/")
 
         print(f"Downloading from {repo_id}/{directory}/ to {local_dir}")
 
-        # 指定ディレクトリ配下のファイルのみをダウンロード
+        # Download only files under the specified directory
         allow_patterns = [f"{directory}/**/*", f"{directory}/*"]
 
-        # snapshot_downloadを使用して指定ディレクトリをダウンロード
-        # max_workersで同時ダウンロード数を制限
+        # Download the specified directory using snapshot_download
+        # Limit concurrent downloads with max_workers
         downloaded_path = snapshot_download(
             repo_id=repo_id,
             allow_patterns=allow_patterns,
@@ -61,28 +61,28 @@ def download_hf_directory(
 
 def parse_hf_url(url: str) -> Tuple[str, str]:
     """
-    HuggingFace URLからrepo_idとdirectoryを抽出
+    Extract repo_id and directory from HuggingFace URL
     """
-    # URLのパース
+    # Parse URL
     parsed = urlparse(url)
 
-    # huggingface.co URLの場合
+    # For huggingface.co URLs
     if parsed.netloc == "huggingface.co":
-        # パスから情報を抽出 (例: /username/repo-name/tree/main/directory/path)
+        # Extract information from path (e.g., /username/repo-name/tree/main/directory/path)
         path_parts = parsed.path.strip("/").split("/")
 
         if len(path_parts) < 2:
             raise ValueError("Invalid Hugging Face URL format")
 
-        # repo_idを取得
+        # Get repo_id
         repo_id = f"{path_parts[0]}/{path_parts[1]}"
 
-        # ディレクトリパスを取得
+        # Get directory path
         if len(path_parts) > 4 and path_parts[2] == "tree":
-            # tree/branch_name/以降をディレクトリとして扱う
+            # Treat everything after tree/branch_name/ as directory
             directory = "/".join(path_parts[4:])
         elif len(path_parts) > 2:
-            # tree/mainがない場合は3番目以降をディレクトリとして扱う
+            # If tree/main is missing, treat 3rd element onwards as directory
             directory = "/".join(path_parts[2:])
         else:
             directory = ""
