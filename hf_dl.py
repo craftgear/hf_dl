@@ -18,14 +18,17 @@ def download_hf_directory(
     max_workers: int = 2,
 ):
     """
-    Recursively download a directory from the specified Hugging Face repository
+    Download a directory or entire repository from the specified Hugging Face repository
     """
     try:
         # If local directory is not specified, use repository name and directory name
         if local_dir is None:
             repo_name = repo_id.replace("/", "_")
-            dir_name = directory.replace("/", "_")
-            local_dir = f"{repo_name}_{dir_name}"
+            if directory:
+                dir_name = directory.replace("/", "_")
+                local_dir = f"{repo_name}_{dir_name}"
+            else:
+                local_dir = repo_name
 
         # If output_dir is specified, create local_dir inside it
         if output_dir is not None:
@@ -34,22 +37,30 @@ def download_hf_directory(
             local_dir = os.path.join(output_dir, local_dir)
 
         # Normalize directory path (remove leading/trailing slashes)
-        directory = directory.strip("/")
+        directory = directory.strip("/") if directory else ""
 
-        print(f"Downloading from {repo_id}/{directory}/ to {local_dir}")
+        if directory:
+            print(f"Downloading from {repo_id}/{directory}/ to {local_dir}")
+            # Download only files under the specified directory
+            allow_patterns = [f"{directory}/**/*", f"{directory}/*"]
+        else:
+            print(f"Downloading entire repository {repo_id} to {local_dir}")
+            # Download entire repository - don't set allow_patterns
+            allow_patterns = None
 
-        # Download only files under the specified directory
-        allow_patterns = [f"{directory}/**/*", f"{directory}/*"]
-
-        # Download the specified directory using snapshot_download
+        # Download the specified directory or entire repository using snapshot_download
         # Limit concurrent downloads with max_workers
-        downloaded_path = snapshot_download(
-            repo_id=repo_id,
-            allow_patterns=allow_patterns,
-            local_dir=local_dir,
-            token=token,
-            max_workers=max_workers,
-        )
+        download_args = {
+            "repo_id": repo_id,
+            "local_dir": local_dir,
+            "token": token,
+            "max_workers": max_workers,
+        }
+        
+        if allow_patterns is not None:
+            download_args["allow_patterns"] = allow_patterns
+            
+        downloaded_path = snapshot_download(**download_args)
 
         print(f"Download completed! Files saved to: {downloaded_path}")
         return downloaded_path
@@ -63,6 +74,12 @@ def parse_hf_url(url: str) -> Tuple[str, str]:
     """
     Extract repo_id and directory from HuggingFace URL
     """
+    # Remove tree/main from end of URL if present
+    if url.endswith("/tree/main"):
+        url = url[:-10]  # Remove "/tree/main"
+    elif url.endswith("/tree/main/"):
+        url = url[:-11]  # Remove "/tree/main/"
+    
     # Parse URL
     parsed = urlparse(url)
 
@@ -94,12 +111,13 @@ def parse_hf_url(url: str) -> Tuple[str, str]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download files recursively from a Hugging Face repository directory",
-        epilog="Example: python hf_download.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/vae",
+        description="Download files recursively from a Hugging Face repository or specific directory",
+        epilog="Examples:\n  python hf_dl.py https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main/vae\n  python hf_dl.py https://huggingface.co/runwayml/stable-diffusion-v1-5",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "url",
-        help="Hugging Face URL (e.g., 'https://huggingface.co/username/repo-name/tree/main/directory')",
+        help="Hugging Face URL (e.g., 'https://huggingface.co/username/repo-name' for entire repo or 'https://huggingface.co/username/repo-name/tree/main/directory' for specific directory)",
     )
     parser.add_argument(
         "--local-dir",
@@ -126,13 +144,11 @@ def main():
     try:
         repo_id, directory = parse_hf_url(args.url)
 
-        if not directory:
-            print("Error: Please specify a directory in the URL")
-            print("Example: https://huggingface.co/username/repo-name/tree/main/models")
-            return
-
         print(f"Repository: {repo_id}")
-        print(f"Directory: {directory}")
+        if directory:
+            print(f"Directory: {directory}")
+        else:
+            print("Directory: (entire repository)")
 
         download_hf_directory(
             repo_id=repo_id,
